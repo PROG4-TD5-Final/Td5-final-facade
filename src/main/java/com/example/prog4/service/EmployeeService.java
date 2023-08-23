@@ -2,9 +2,11 @@ package com.example.prog4.service;
 
 import com.example.prog4.model.EmployeeFilter;
 import com.example.prog4.model.exception.NotFoundException;
+import com.example.prog4.repository.RepositoryImpl;
 import com.example.prog4.repository.database1.EmployeeRepository;
 import com.example.prog4.repository.database1.dao.EmployeeManagerDao;
 import com.example.prog4.repository.database1.entity.Employee;
+import com.example.prog4.repository.database2.CnapsRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,23 +21,27 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class EmployeeService {
-    private EmployeeRepository repository;
+    private RepositoryImpl repositoryImpl;
     private EmployeeManagerDao employeeManagerDao;
-    private CnapsService cnapsService;
+    private CnapsRepositoryFacade cnapsRepositoryFacade;
 
 
 
     public Employee getOne(String id) {
-        Employee employee = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Not found id=" + id));
+        Employee employee = repositoryImpl.findById(id);
+
+        if (employee == null) {
+            throw new NotFoundException("Not found id=" + id);
+        }
 
         // Obtenir le numéro CNAPS actuel depuis la base de données CNAPS
-        String cnapsNumber = cnapsService.getCnapsNumber(employee.getPersonalEmail());
+        String cnapsNumber = cnapsRepositoryFacade.getCnapsNumberByPersonalEmail(employee.getPersonalEmail());
 
         // Mettre à jour l'employé avec le numéro CNAPS
         employee.setCnaps(cnapsNumber);
 
         return employee;
+
     }
 
     @Transactional
